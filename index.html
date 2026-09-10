@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shorts Assembly Line — Auto-Workflow Blueprint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#ffffff; --surface:#fdf6fb; --surface-2:#f6e8f5;
+    --border:#ecdaf0; --border-soft:#f3e6f6;
+    --text:#2c1b3a; --text-dim:#6d5c82; --text-faint:#a394b3;
+    --purple:#7c3aed; --purple-soft:rgba(124,58,237,.09);
+    --pink:#db2777; --pink-soft:rgba(219,39,119,.09);
+    --red:#be123c; --red-soft:rgba(190,18,60,.08);
+    --radius:10px;
+    --font-display:'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    --font-body:'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-mono:'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  @media (prefers-reduced-motion:reduce){ html{ scroll-behavior:auto; } }
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:var(--font-body); line-height:1.65; font-size:16px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:1040px; margin:0 auto; padding:2.75rem 1.5rem 4rem; }
+  h1,h2,h3{ font-family:var(--font-display); font-weight:600; line-height:1.22; margin:0 0 .55rem; color:var(--text); }
+  h1{ font-size:clamp(1.7rem,7vw,2.7rem); font-weight:700; letter-spacing:-.01em; }
+  h2{ font-size:clamp(1.2rem,4.5vw,1.45rem); margin-top:0; padding-top:2.6rem; }
+  h3{ font-size:1.08rem; color:var(--purple); margin-top:1.6rem; }
+  p{ margin:0 0 1rem; }
+  a{ color:var(--pink); text-decoration:none; border-bottom:1px solid transparent; }
+  a:hover,a:focus-visible{ border-bottom-color:var(--pink); }
+  :focus-visible{ outline:2px solid var(--purple); outline-offset:2px; }
+  strong{ color:var(--text); }
+
+  .hero{ padding-bottom:1.75rem; border-bottom:1px solid var(--border); margin-bottom:1.75rem; }
+  .hero .lede{ color:var(--text-dim); font-size:1.08rem; max-width:660px; }
+
+  .pipeline{ display:flex; align-items:stretch; gap:.4rem; flex-wrap:wrap; margin-top:2rem; }
+  .stage{ flex:1 1 150px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:.95rem 1.05rem; min-width:135px; }
+  .stage.extra{ border-style:dashed; border-color:var(--pink); background:var(--pink-soft); }
+  .stage-num{ display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:var(--purple); color:#fff; font-family:var(--font-mono); font-size:.72rem; font-weight:600; margin-bottom:.55rem; }
+  .stage-name{ display:block; font-family:var(--font-display); font-weight:600; margin-bottom:.2rem; font-size:.98rem; }
+  .stage-desc{ display:block; font-size:.81rem; color:var(--text-dim); }
+  .stage-tag{ display:inline-block; margin-top:.5rem; font-size:.66rem; font-family:var(--font-mono); color:var(--pink); border:1px solid var(--pink); border-radius:20px; padding:.15rem .5rem; }
+  .arrow{ display:flex; align-items:center; justify-content:center; color:var(--purple); font-size:1.3rem; flex:0 0 auto; padding:0 .05rem; }
+  @media (max-width:760px){
+    .pipeline{ flex-direction:column; }
+    .arrow{ transform:rotate(90deg); padding:.15rem 0; align-self:center; }
+  }
+
+  .tabbar{ display:flex; gap:.3rem; border-bottom:1px solid var(--border); margin-bottom:1.5rem; position:sticky; top:0; background:var(--bg); padding-top:.4rem; z-index:5; }
+  .tab{ font-family:var(--font-display); font-size:1rem; font-weight:600; color:var(--text-dim); background:none; border:none; padding:.85rem 1.05rem; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; -webkit-tap-highlight-color:transparent; }
+  .tab:hover{ color:var(--text); }
+  .tab.active{ color:var(--purple); border-bottom-color:var(--purple); }
+
+  .panel{ animation:fadein .3s ease; }
+  @keyframes fadein{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+  @media (prefers-reduced-motion:reduce){ .panel{ animation:none; } }
+
+  .block{ margin-bottom:1rem; }
+  .block > p.dek{ color:var(--text-dim); font-size:1rem; max-width:680px; }
+
+  .callout{ border-left:3px solid var(--pink); background:var(--pink-soft); border-radius:0 8px 8px 0; padding:1rem 1.2rem; margin:1.15rem 0; }
+  .callout p:last-child{ margin-bottom:0; }
+  .callout.warning{ border-color:var(--red); background:var(--red-soft); }
+  .callout strong.lead{ display:block; font-family:var(--font-display); margin-bottom:.3rem; color:var(--text); font-size:1rem; }
+
+  .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; border:1px solid var(--border); border-radius:var(--radius); margin:1.25rem 0; position:relative; }
+  table{ width:100%; border-collapse:collapse; min-width:640px; font-size:.91rem; }
+  thead th{ text-align:left; background:var(--surface-2); font-family:var(--font-display); font-weight:600; padding:.7rem .9rem; border-bottom:1px solid var(--border); white-space:nowrap; }
+  tbody td{ padding:.7rem .9rem; border-bottom:1px solid var(--border-soft); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:hover td{ background:rgba(124,58,237,.045); }
+  td.num, span.num{ font-family:var(--font-mono); color:var(--pink); white-space:nowrap; }
+  td.model{ font-family:var(--font-display); font-weight:600; white-space:nowrap; }
+
+  .two-col{ display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1.25rem; margin:1.25rem 0; }
+  .platform-card{ border:1px solid var(--border); border-radius:var(--radius); padding:1.3rem 1.4rem; background:var(--surface); }
+  .platform-card h3{ margin-top:0; }
+  .platform-card ul{ margin:.4rem 0 1rem; padding-left:1.15rem; }
+  .platform-card li{ margin-bottom:.4rem; font-size:.94rem; color:var(--text-dim); }
+  .platform-card li strong{ color:var(--text); }
+
+  .checklist{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:1px; background:var(--border); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin:1.25rem 0; }
+  .checklist-item{ background:var(--surface); padding:1.1rem 1.25rem; }
+  .checklist-item strong{ display:block; font-family:var(--font-display); color:var(--purple); margin-bottom:.3rem; font-size:.97rem; }
+  .checklist-item span{ color:var(--text-dim); font-size:.91rem; }
+
+  details.agent{ border:1px solid var(--border); border-radius:var(--radius); margin-bottom:.6rem; background:var(--surface); overflow:hidden; }
+  details.agent summary{ cursor:pointer; padding:.85rem 1.1rem; font-family:var(--font-display); font-weight:600; list-style:none; display:flex; justify-content:space-between; align-items:center; gap:1rem; -webkit-tap-highlight-color:transparent; }
+  details.agent summary::-webkit-details-marker{ display:none; }
+  details.agent summary::after{ content:'+'; color:var(--purple); font-size:1.3rem; flex:0 0 auto; }
+  details.agent[open] summary::after{ content:'–'; }
+  details.agent .agent-body{ padding:.2rem 1.1rem 1.1rem; color:var(--text-dim); border-top:1px solid var(--border-soft); }
+  details.agent .agent-body p{ margin:.85rem 0 0; }
+  details.agent .agent-body ul{ margin:.6rem 0 0; padding-left:1.15rem; }
+  details.agent .agent-body li{ margin-bottom:.4rem; }
+
+  .fine-print{ font-size:.85rem; color:var(--text-faint); }
+  ul.plain{ margin:0 0 1rem; padding-left:1.2rem; }
+  ul.plain li{ margin-bottom:.55rem; }
+  ul.plain li strong{ color:var(--text); }
+
+  .stat-row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1px; background:var(--border); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin:1.25rem 0; }
+  .stat{ background:var(--surface); padding:1rem 1.1rem; text-align:left; }
+  .stat b{ display:block; font-family:var(--font-mono); color:var(--pink); font-size:1.1rem; margin-bottom:.15rem; }
+  .stat span{ color:var(--text-dim); font-size:.82rem; }
+
+  footer{ border-top:1px solid var(--border); margin-top:3rem; padding-top:1.5rem; color:var(--text-faint); font-size:.85rem; }
+
+  /* Hint that data tables scroll horizontally, on the narrow viewports where they need to */
+  .table-wrap::after{
+    content:''; position:absolute; top:0; right:0; bottom:0; width:22px;
+    background:linear-gradient(to right, transparent, var(--bg));
+    pointer-events:none; opacity:.95;
+  }
+  @media (min-width:761px){ .table-wrap::after{ display:none; } }
+
+  /* Mobile tightening: smaller outer padding, denser tables, forced single-column grids
+     below the width where auto-fit's minmax could otherwise force a sliver of overflow */
+  @media (max-width:600px){
+    .wrap{ padding:1.75rem 1.1rem 3rem; }
+    .hero{ padding-bottom:1.25rem; margin-bottom:1.25rem; }
+    h2{ padding-top:2rem; }
+    .pipeline{ margin-top:1.5rem; }
+    .tab{ padding:.8rem .85rem; font-size:.95rem; }
+    table{ font-size:.83rem; min-width:560px; }
+    thead th, tbody td{ padding:.55rem .65rem; }
+    .platform-card{ padding:1.1rem 1.2rem; }
+    .checklist-item{ padding:1rem 1.1rem; }
+    .stat{ padding:.85rem .95rem; }
+    .two-col, .checklist{ grid-template-columns:1fr; }
+    .stat-row{ grid-template-columns:repeat(2,1fr); }
+    details.agent summary{ padding:.8rem 1rem; font-size:.96rem; }
+    details.agent .agent-body{ padding:.2rem 1rem 1rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <h1>Shorts Assembly Line</h1>
+    <p class="lede">A working blueprint for a four-agent Shorts &amp; TikTok pipeline: what to pay for video generation, what the platforms actually pay you back, how not to get flagged, and the code to build it on.</p>
+
+    <div class="pipeline" aria-label="Suggested pipeline: searcher, script writer, voice, video, assemble and publish">
+      <div class="stage"><span class="stage-num">1</span><span class="stage-name">Searcher</span><span class="stage-desc">Finds what's worth a video</span></div>
+      <span class="arrow" aria-hidden="true">→</span>
+      <div class="stage"><span class="stage-num">2</span><span class="stage-name">Script writer</span><span class="stage-desc">Topic → ~45–90s script</span></div>
+      <span class="arrow" aria-hidden="true">→</span>
+      <div class="stage"><span class="stage-num">3</span><span class="stage-name">Voice</span><span class="stage-desc">Local clone narrates it</span></div>
+      <span class="arrow" aria-hidden="true">→</span>
+      <div class="stage"><span class="stage-num">4</span><span class="stage-name">Video</span><span class="stage-desc">Generates matching visuals</span></div>
+      <span class="arrow" aria-hidden="true">→</span>
+      <div class="stage extra"><span class="stage-num">5</span><span class="stage-name">Assemble &amp; publish</span><span class="stage-desc">Stitch, caption, upload</span><span class="stage-tag">missing from your list — see why</span></div>
+    </div>
+  </header>
+
+  <nav class="tabbar" role="tablist" aria-label="Blueprint sections">
+    <button class="tab active" id="tab-general" role="tab" aria-selected="true" aria-controls="panel-general" type="button">General</button>
+    <button class="tab" id="tab-developer" role="tab" aria-selected="false" aria-controls="panel-developer" type="button">Developer</button>
+  </nav>
+
+  <main>
+  <!-- ===================== GENERAL PANEL ===================== -->
+  <section id="panel-general" class="panel" role="tabpanel" aria-labelledby="tab-general">
+
+    <div class="block" id="video-generators">
+      <h2>Top 10 AI video generators</h2>
+      <p class="dek">Every one of these bills by the second of finished video, not by a 30-second block — the confusion is fair, since "per second" only became the industry-standard unit within the last year or so. A few avatar tools bill per minute instead, and Sora prices per fixed-length clip (which is the same per-second rate, just pre-multiplied). Ranges below span each model's cheapest fast/low-res tier to its priciest 1080p-with-audio tier.</p>
+
+      <div class="callout">
+        <strong class="lead">Quick math, since the unit was the confusing part</strong>
+        <p>At Kling 3.0's standard rate (~$0.084/sec), a 45-second Short costs about <strong>$3.80</strong> in raw video generation. At Google Veo 3.1 Standard with audio ($0.40/sec), the same 45 seconds costs <strong>$18</strong>. Resolution and native audio are what actually move the price — not which platform you're publishing to. Most models only generate 5–10 seconds per API call, so a 45–90 second Short usually means stitching 4–9 clips together with ffmpeg; budget for that, not one clean call.</p>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Model</th><th>Price</th><th>Billed by</th><th>Access</th><th>Best for</th></tr></thead>
+          <tbody>
+            <tr><td class="model">Google Veo 3.1</td><td class="num">$0.03–$0.40/sec</td><td>USD / second (Lite → Standard tier)</td><td>Gemini API, Vertex AI</td><td>Best overall quality; only one here with native synced audio+dialogue baked in</td></tr>
+            <tr><td class="model">Kling 3.0</td><td class="num">$0.08–$0.17/sec</td><td>USD / second (credits, 720p→1080p)</td><td>kling.ai/dev, fal.ai, WaveSpeed</td><td>Character &amp; motion consistency — good for a recurring host/mascot</td></tr>
+            <tr><td class="model">MiniMax Hailuo 2.3 / H3</td><td class="num">$0.03–$0.16/sec</td><td>USD / second</td><td>Official API, fal.ai, PiAPI</td><td>Cheapest strong quality; H3 does native 2K with audio</td></tr>
+            <tr><td class="model">Runway Gen-4 / 4.5</td><td class="num">$0.05–$0.15/sec</td><td>USD / second (credits, $0.01 ea.)</td><td>Official Runway API</td><td>Best editing &amp; camera-control tooling; industry default</td></tr>
+            <tr><td class="model">ByteDance Seedance 2.0/2.5</td><td class="num">$0.08–$0.30/sec</td><td>USD / second</td><td>WaveSpeed, fal.ai, BytePlus</td><td>Strong price-to-quality via aggregators</td></tr>
+            <tr><td class="model">Luma Ray 3.2 / Ray 2</td><td class="num">$0.06–$0.40/sec</td><td>USD / second (540p→1080p)</td><td>Luma API, fal.ai</td><td>HDR, cinematic look for atmospheric b-roll</td></tr>
+            <tr><td class="model">PixVerse V6</td><td class="num">$0.025–$0.12/sec</td><td>USD / second (360p→1080p)</td><td>fal.ai, official</td><td>Cheap, vertical-native, built-in FX + sound effects — a natural Shorts fit</td></tr>
+            <tr><td class="model">Vidu Q3</td><td class="num">$0.035–$0.12/sec</td><td>USD / second (credits)</td><td>platform.vidu.com, fal.ai</td><td>Cheap, solid motion quality</td></tr>
+            <tr><td class="model">HeyGen (Avatar)</td><td class="num">$0.017–$0.067/sec</td><td>USD / second (~$1–4 per minute)</td><td>Official HeyGen API</td><td>A consistent talking-head/avatar host instead of pure b-roll</td></tr>
+            <tr><td class="model">OpenAI Sora 2</td><td class="num">$0.10–$0.70/sec</td><td>USD / second</td><td>Official OpenAI API</td><td>Strong physics &amp; multi-shot coherence — see warning below</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="fine-print">Also worth knowing: Alibaba's <strong>Wan 2.6</strong> is a cheap, open-weight-adjacent option around $0.10–0.15/sec. <strong>Synthesia</strong> and <strong>D-ID</strong> make strong talking-head avatars but are built around monthly seat/minute subscriptions rather than pay-as-you-go API access, which makes them awkward to wire into a fully automated per-video pipeline — HeyGen is the more automation-friendly avatar option of the three.</p>
+
+      <div class="callout warning">
+        <strong class="lead">⚠ Sora 2's API sunsets September 24, 2026</strong>
+        <p>That's two weeks after today. OpenAI already discontinued the consumer Sora app on April 26, 2026, and the API itself is scheduled to stop accepting requests on the date above. Don't build new pipeline infrastructure around Sora right now unless OpenAI announces a successor before then — treat it as the one entry in this table that's actively being phased out rather than one to integrate first.</p>
+      </div>
+    </div>
+
+    <div class="block" id="searcher-agent">
+      <h2>Best AI for the searcher agent</h2>
+      <p class="dek">You said you'll pick the script writer and voice engine yourself — here's what actually works for a "searcher" that has to run unattended and find real topics, not just list generic trends.</p>
+
+      <h3>Default choice: Perplexity Sonar API</h3>
+      <p>A web-search-grounded LLM in a single API call — send it "what's trending in [your niche] this week" and it searches, reads, and returns a cited answer, with no scraping infrastructure of your own to maintain. Pricing: <span class="num">Sonar $1 / $1</span> per million tokens, <span class="num">Sonar Pro $3 / $15</span> per million tokens, plus a per-request search fee of roughly <span class="num">$5–$14 per 1,000 requests</span> depending on search depth. It's the least engineering for a fully automated pipeline, which is why it's the default recommendation.</p>
+
+      <h3>More control / cheaper at real volume: build it yourself</h3>
+      <p>Any capable LLM you're already paying for, given tool access to free or cheap raw sources, then asked to rank and synthesize:</p>
+      <ul class="plain">
+        <li><strong>YouTube Data API v3</strong> — trending &amp; search endpoints, free (10,000 units/day)</li>
+        <li><strong>Reddit's public API</strong> — subreddit "hot" / "rising", free</li>
+        <li><strong>Google Trends</strong> via the unofficial <code>pytrends</code> library, free</li>
+        <li><strong>TikTok Creative Center's Trends pages</strong> — no official API, but worth checking manually (its Creator Search Insights / "Content Gap" tool shows what people search for with too few videos answering it — a real, underused signal)</li>
+        <li><strong>Exploding Topics API</strong> — paid, purpose-built for catching trends before they peak</li>
+      </ul>
+      <p>Start with Sonar. Move to the DIY version once you know which raw sources actually predict a winning topic for <em>your</em> niche — that performance data should also feed the script writer's retrieval store (see the Developer tab).</p>
+    </div>
+
+    <div class="block" id="monetization">
+      <h2>What YouTube and TikTok actually pay</h2>
+      <p class="dek">Both programs pay less per view than most people expect, and both gate you behind real traction — not upload volume.</p>
+
+      <div class="two-col">
+        <div class="platform-card">
+          <h3>YouTube Shorts</h3>
+          <p class="fine-print" style="margin-top:-.4rem;">Via the YouTube Partner Program (YPP)</p>
+          <ul>
+            <li><strong>Fan-funding tier:</strong> 500 subscribers + (3M Shorts views in 90 days <em>or</em> 3,000 watch hours) + 3 public uploads in the last 90 days</li>
+            <li><strong>Full ad revenue:</strong> 1,000 subscribers + (10M Shorts views in 90 days <em>or</em> 4,000 watch hours in 12 months)</li>
+            <li><strong>From Feb 1, 2027:</strong> the full-revenue bar roughly doubles — 8,000 watch hours or 20M Shorts views (the 1,000-subscriber requirement stays put)</li>
+          </ul>
+          <p style="font-size:.94rem;">Typical Shorts RPM: <span class="num">$0.03–$0.10</span> per 1,000 views. A Short at 1 million views earns roughly <strong>$30–$100</strong> — the ad pool splits across everyone in the Shorts feed, so niche and advertiser demand swing this a lot. Max length: <strong>3 minutes</strong> (raised from 60 seconds in Oct 2024); no minimum.</p>
+        </div>
+        <div class="platform-card">
+          <h3>TikTok</h3>
+          <p class="fine-print" style="margin-top:-.4rem;">Via the Creator Rewards Program (replaced the old Creator Fund)</p>
+          <ul>
+            <li><strong>10,000 followers</strong></li>
+            <li><strong>100,000 video views</strong> in the last 30 days</li>
+            <li><strong>18 years or older</strong>, account based in an eligible country</li>
+            <li>Videos must be <strong>original</strong> (not reposted) and <strong>at least 60 seconds long</strong></li>
+          </ul>
+          <p style="font-size:.94rem;">Typical RPM: <span class="num">$0.40–$1.00</span> per 1,000 <em>qualified</em> views (a real 5-second-plus watch from a unique account in the For You feed) — up to $1.20–$6+ in high-value niches like finance or education. <strong>A video under 60 seconds earns nothing</strong> from this program, even if it goes viral. The old Creator Fund paid roughly $0.02–$0.05 per 1,000 views — 10–25x less.</p>
+        </div>
+      </div>
+
+      <p>The practical upshot: TikTok pays 5–10x more per view once you clear its bar, but that bar (10,000 followers) is higher than YouTube's Shorts-views path, which viral growth alone can clear. Cut your videos to <strong>60–90 seconds</strong> and you satisfy TikTok's 60-second floor while staying well under YouTube's 3-minute ceiling — one render, both platforms.</p>
+    </div>
+
+    <div class="block" id="restrictions">
+      <h2>Staying off the restriction list</h2>
+
+      <div class="callout warning">
+        <strong class="lead">⚠ The single biggest risk to this exact project</strong>
+        <p>YouTube renamed its old "repetitious content" rule to the <strong>inauthentic content policy</strong> in July 2025, and it's evaluated at the <em>channel level</em>, not video-by-video. The wording targets content that's "repetitive or mass-produced" or "easily replicable at scale with little human input" — a fair description of an unattended four-agent pipeline if you let it run completely on its own. Enforcement is normally a three-strike ladder (warning → 90-day monetization suspension → permanent removal from the Partner Program), but YouTube has skipped straight to termination for large-scale AI-generated operations — a January 2026 enforcement wave took down 16 channels at once. The dividing line in YouTube's own language isn't "AI or not AI" — it's whether a human adds real creative judgment a viewer couldn't get from a template.</p>
+      </div>
+
+      <p><strong>What to actually do about it:</strong></p>
+      <ul class="plain">
+        <li><strong>Vary structure across videos</strong> — don't run one rigid template with only the topic swapped in</li>
+        <li><strong>Add a real editorial layer</strong> — you choose which topics run, you review or rewrite hooks, you're not just piping TTS over stock footage verbatim (that exact pattern is named as a canonical violation)</li>
+        <li><strong>Disclose synthetic media</strong> using YouTube Studio's "Altered or synthetic content" toggle at upload — skipping this is its own separate three-strike violation</li>
+        <li><strong>Keep a human glance-over before publish</strong>, at least while the channel is young (see the Developer tab for where this fits in the pipeline)</li>
+      </ul>
+
+      <h3>TikTok-specific</h3>
+      <ul class="plain">
+        <li>The Terms of Service ban bots/scripts/automation that aren't "approved in writing" — build on the official <strong>Content Posting API</strong> instead of unofficial auto-poster or bot tools</li>
+        <li>Reposted or duplicate content earns <strong>$0</strong> from Creator Rewards and reads as spam</li>
+        <li>AI content needs disclosure; TikTok auto-detects C2PA content-credential metadata and can label or restrict undisclosed synthetic video</li>
+        <li>If an account gets restricted, opening a new one to route around it ("ban evasion") is treated as its own violation, not a fresh start</li>
+      </ul>
+
+      <h3>Both platforms</h3>
+      <ul class="plain">
+        <li><strong>License your music</strong> — each platform's royalty-free library, or original generated music. Unlicensed tracks trigger Content ID claims that mute or block the video</li>
+        <li><strong>Only clone voices you own or have explicit written consent for</strong> — this is a legal exposure (impersonation / right of publicity), not just a platform rule</li>
+      </ul>
+
+      <h3>How often to post</h3>
+      <div class="stat-row">
+        <div class="stat"><b>1 / day</b><span>New channel — lets the algorithm get a clean read on your audience</span></div>
+        <div class="stat"><b>2–3 / day</b><span>Established channel — where most of the growth benefit actually sits</span></div>
+        <div class="stat"><b>~5 / day</b><span>Soft ceiling — returns flatten out hard past here</span></div>
+        <div class="stat"><b>~10 / day</b><span>Real spam-detection risk starts</span></div>
+      </div>
+      <p>Space multiple uploads a few hours apart — never dump them all at once. Consistency (same time daily) matters more than raw volume, and most creators who commit to daily posting quietly cut back within 90 days. Pick a cadence you can sustain for a year, not a month.</p>
+    </div>
+
+    <div class="block" id="general-missing">
+      <h2>What else you should plan for</h2>
+      <p class="dek">Nothing here is a blocker — it's the list of things that quietly decide whether this becomes a real, durable channel or a fast demonetization.</p>
+      <div class="checklist">
+        <div class="checklist-item"><strong>Voice-cloning rights</strong><span>Only clone voices you own or have written consent for — treat it as a legal question, not just a policy one.</span></div>
+        <div class="checklist-item"><strong>Music &amp; sound licensing</strong><span>Use each platform's royalty-free library or original generated music.</span></div>
+        <div class="checklist-item"><strong>Pick a niche</strong><span>"Search viral topics" broadly fights your own algorithm; one lane teaches your audience and the recommender system faster.</span></div>
+        <div class="checklist-item"><strong>The first 3 seconds</strong><span>Build a hook-review step into the script writer — it decides most of your swipe-away rate.</span></div>
+        <div class="checklist-item"><strong>Burn in captions</strong><span>Most Shorts/TikTok viewing happens sound-off.</span></div>
+        <div class="checklist-item"><strong>Close the analytics loop</strong><span>Retention and swipe-away data should steer what the searcher and writer prioritize next — not just view counts.</span></div>
+        <div class="checklist-item"><strong>Check unit economics first</strong><span>Total the per-video cost across all four agents and compare it to realistic RPM × expected views before scaling to many videos or channels.</span></div>
+        <div class="checklist-item"><strong>Confirm regional eligibility</strong><span>YPP and Creator Rewards aren't available in every country — verify before building the business case on either.</span></div>
+        <div class="checklist-item"><strong>Don't bet it all on one channel</strong><span>A channel or account can be demonetized or banned overnight.</span></div>
+        <div class="checklist-item"><strong>Handle the business basics</strong><span>Tax treatment of ad revenue, a dedicated email and payout method for AdSense and TikTok.</span></div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ===================== DEVELOPER PANEL ===================== -->
+  <section id="panel-developer" class="panel" role="tabpanel" aria-labelledby="tab-developer" hidden>
+
+    <div class="block" id="oss-repos">
+      <h2>Open-source pipelines to study</h2>
+      <p class="dek">These cover the same ground you're describing — topic in, rendered Short out. Worth reading for architecture ideas even if you rebuild the pieces yourself.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Project</th><th>What it does</th><th>Stack</th></tr></thead>
+          <tbody>
+            <tr><td class="model"><a href="https://github.com/harry0703/MoneyPrinterTurbo" target="_blank" rel="noopener">harry0703/<br>MoneyPrinterTurbo</a></td><td>Topic or keyword → script, matched stock footage, subtitles, background music, HD video. Web UI + REST API, Docker deploy. The most active and popular repo of the bunch.</td><td>Python</td></tr>
+            <tr><td class="model"><a href="https://github.com/RayVentura/ShortGPT" target="_blank" rel="noopener">RayVentura/<br>ShortGPT</a></td><td>Multi-engine framework: a Shorts engine, a long-form video engine, and a dub/translation engine that re-voices and re-subtitles an existing video into another language.</td><td>Python</td></tr>
+            <tr><td class="model"><a href="https://github.com/SaarD00/AI-Youtube-Shorts-Generator" target="_blank" rel="noopener">SaarD00/<br>AI-Youtube-Shorts-Generator</a></td><td>Faceless pipeline: Gemini writes an edutainment-style Hook→Context→Mechanism→Twist script, Edge-TTS narrates, ffmpeg edits with a dual-stock-clip "A/B split" visual style plus recurring mascot injection.</td><td>Python</td></tr>
+            <tr><td class="model"><a href="https://github.com/gyoridavid/short-video-maker" target="_blank" rel="noopener">gyoridavid/<br>short-video-maker</a></td><td>Exposes TTS + captions + stock footage + music as an <strong>MCP server</strong> and REST API, so an agent framework can call the whole thing as one tool.</td><td>TypeScript / Node</td></tr>
+            <tr><td class="model"><a href="https://github.com/rushindrasinha/youtube-shorts-pipeline" target="_blank" rel="noopener">rushindrasinha/<br>youtube-shorts-pipeline</a></td><td>"Verticals v3" — topic → niche-tuned script → Gemini Imagen b-roll → Whisper word-level captions → ffmpeg assembly with mood-matched music → upload. Reports ~$0.11 in API cost per video.</td><td>Python</td></tr>
+            <tr><td class="model"><a href="https://github.com/marvinvr/auto-yt-shorts" target="_blank" rel="noopener">marvinvr/<br>auto-yt-shorts</a></td><td>Docker-based: LLM topic ideation, voiceover, stock footage, automatic upload, parallel execution across videos.</td><td>Python, Docker</td></tr>
+            <tr><td class="model"><a href="https://github.com/Binary-Bytes/Auto-YouTube-Shorts-Maker" target="_blank" rel="noopener">Binary-Bytes/<br>Auto-YouTube-Shorts-Maker</a></td><td>Minimal single-script version of the same idea — a good first read before the larger repos above.</td><td>Python</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="block" id="architecture">
+      <h2>Do you need skills, RAG, and tools for each agent?</h2>
+      <p class="dek">Short answer: yes for some, no for others. The honest first insight is that only two of your four "agents" genuinely benefit from being LLM-reasoning agents at all — treating all four identically will cost you reliability for no benefit.</p>
+
+      <p><strong>Searcher</strong> and <strong>script writer</strong> are reasoning tasks: they benefit from tools, retrieval, and a written style guide. <strong>Voice cloning</strong> and <strong>video generation</strong> are much closer to deterministic pipeline steps — you call a model with fixed inputs and get an output back, closer to a function call than a decision.</p>
+
+      <div class="callout">
+        <strong class="lead">Three terms, quickly</strong>
+        <p><strong>Tools</strong> = real function calls the agent can invoke (a search API, ffmpeg, an upload endpoint). <strong>Skill</strong> = a written style guide or rubric the model follows, like a system prompt with house rules and examples. <strong>RAG</strong> = retrieval over your own stored data (past scripts, performance metrics, topics already covered) so the model grounds on your history, not just its training data.</p>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Agent</th><th>Tools</th><th>RAG</th><th>Skill (style guide)</th></tr></thead>
+          <tbody>
+            <tr><td class="model">Searcher</td><td>Yes — search / trends APIs</td><td>Light — a "topics already covered" store</td><td>Yes — a scoring rubric for what counts as a good topic</td></tr>
+            <tr><td class="model">Script writer</td><td>Optional — fact lookup on the source topic</td><td>Yes — your own back-catalog + what performed well</td><td>Yes — this is the one that matters most</td></tr>
+            <tr><td class="model">Voice (local clone)</td><td>No — it <em>is</em> the tool</td><td>No</td><td>Optional — pacing/emphasis markup if the model supports it</td></tr>
+            <tr><td class="model">Video generator</td><td>Yes — the gen API, plus ffmpeg to stitch clips</td><td>Helpful — reference images keep a recurring host/style consistent</td><td>Yes — a template turning script beats into shot prompts</td></tr>
+            <tr><td class="model">Assemble &amp; publish <span class="fine-print">(your missing 5th step)</span></td><td>Yes — ffmpeg, captions, upload APIs</td><td>Not really</td><td>Yes — metadata rules + a compliance checklist</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <details class="agent">
+        <summary>Searcher — the reasoning agent</summary>
+        <div class="agent-body">
+          <p>Tools are the whole job here: wire in a search/trends API (see the General tab's recommendation) so the model is grounded in this week's reality, not its training data. RAG stays light — mainly a "topics already covered" store so you don't repeat yourself, which also directly reduces your inauthentic-content risk (repetition is exactly what that policy looks for). The one thing worth real prompt effort is the scoring rubric: recency, estimated competition, fit to your niche, and whether the topic is honestly expressible in under 90 seconds.</p>
+        </div>
+      </details>
+
+      <details class="agent">
+        <summary>Script writer — the one worth the most effort</summary>
+        <div class="agent-body">
+          <p>This is where a real "skill" (a house-style system prompt) pays off most: hook formulas, a pacing target (roughly 2.3–2.5 spoken words per second, so a 60-second script lands around 140–160 words), a structure like Hook → Value → Payoff/CTA, and a handful of few-shot examples of your best-performing scripts. RAG over your own back-catalog plus its performance data lets the model learn what specifically works for <em>your</em> channel instead of generic advice, and keeps it from quietly rewriting a script you already used.</p>
+        </div>
+      </details>
+
+      <details class="agent">
+        <summary>Audio generator — mostly not an "agent"</summary>
+        <div class="agent-body">
+          <p>This step is a direct model call, not a reasoning task, so skills and RAG mostly don't apply. What it does need: a consented reference sample, loudness normalization (around ‑14 LUFS for social platforms), silence trimming, and — if your chosen model supports it — inline prosody/emphasis markup. Since you're picking this yourself, a starting shortlist worth evaluating as of 2026: <strong>Coqui XTTS v2</strong> and Resemble AI's <strong>Chatterbox</strong> (both run on roughly 4GB VRAM), <strong>F5-TTS</strong> and <strong>Fish Speech / Fish Audio S2</strong> (higher quality, more setup), and <strong>CosyVoice2</strong> / <strong>IndexTTS-2</strong> (strong multilingual and emotional control).</p>
+        </div>
+      </details>
+
+      <details class="agent">
+        <summary>Video generator — tools plus a shot-list skill</summary>
+        <div class="agent-body">
+          <p>Needs the generation API as a tool, plus ffmpeg to stitch multiple 5–10 second clips into your full runtime and sync them to the voiceover's exact length. A lightweight "skill" template that turns each script beat into a shot prompt (subject, action, camera move, duration budget) keeps output consistent from video to video. RAG becomes genuinely useful once you want a recurring visual identity — most of the APIs in the General tab support reference-image conditioning for exactly this.</p>
+        </div>
+      </details>
+
+      <details class="agent">
+        <summary>Assemble &amp; publish — the step you didn't list</summary>
+        <div class="agent-body">
+          <p>Your four agents produce a script, a voice track, and video clips — something still has to sync them, burn in captions, generate a thumbnail and metadata, run a policy pre-check, and actually call the upload API. That's most naturally a fifth, mostly-deterministic step (see the publishing notes below for concrete quota numbers), with a metadata "skill" (title/description/hashtag rules per platform) and a compliance-checklist gate before anything goes live.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="block" id="orchestration">
+      <h2>Orchestration options</h2>
+      <p class="dek">The pipeline is mostly linear — search → write → voice → video → publish — so a heavyweight multi-agent framework isn't required. Three options worth knowing anyway:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Option</th><th>Good fit when</th><th>Overkill when</th></tr></thead>
+          <tbody>
+            <tr><td class="model"><a href="https://github.com/n8n-io/n8n" target="_blank" rel="noopener">n8n</a></td><td>You want a visual, self-hostable workflow you can inspect and pause between steps — strong for gluing together the many HTTP APIs this project needs</td><td>You need genuinely complex branching agent reasoning</td></tr>
+            <tr><td class="model"><a href="https://github.com/crewAIInc/crewAI" target="_blank" rel="noopener">CrewAI</a></td><td>You want the searcher and script writer to act as role-based agents that hand off and critique each other's work</td><td>The pipeline is this linear — CrewAI is built for team-of-agents problems</td></tr>
+            <tr><td class="model"><a href="https://github.com/langchain-ai/langgraph" target="_blank" rel="noopener">LangGraph</a></td><td>You want full code-level control over state and retries inside a Python codebase</td><td>You'd rather not maintain custom orchestration code at all</td></tr>
+            <tr><td class="model">Plain queue <span class="fine-print">(cron + a state table)</span></td><td>You want the fewest moving parts and the most predictable failures</td><td>You expect the pipeline's logic to keep changing shape</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>For a first version, a plain state-tracked queue is probably the most reliable choice: wrap the searcher and script writer in real LLM calls, treat audio/video/publish as deterministic steps with retries, and reach for n8n or LangGraph once you're ready to add branching — like auto-retrying with a different video model when one provider's queue backs up.</p>
+    </div>
+
+    <div class="block" id="publishing">
+      <h2>Publishing API notes</h2>
+      <h3>YouTube Data API v3</h3>
+      <ul class="plain">
+        <li>Default quota: <strong>10,000 units/day</strong> per Google Cloud project; a video upload costs roughly <strong>1,600 units</strong> — about <strong>6 uploads/day</strong> before you need to file for a quota increase (there's no self-serve paid tier; you justify the use case to Google)</li>
+        <li>Quota resets at midnight Pacific Time</li>
+        <li>Each channel needs its own OAuth credentials — running several channels means several credential sets, and likely several Cloud projects once you're past 6 uploads/day total</li>
+      </ul>
+      <h3>TikTok Content Posting API</h3>
+      <ul class="plain">
+        <li>Official, free — no per-call fee</li>
+        <li>The real cost is calendar time, not dollars: a sandbox-to-production review is required before you can publish live</li>
+        <li>Two scopes matter: <span class="num">video.publish</span> posts directly to the feed; <span class="num">video.upload</span> drops into the creator's inbox for manual confirmation — pick whichever matches how much human-in-the-loop you want</li>
+      </ul>
+    </div>
+
+    <div class="block" id="dev-missing">
+      <h2>What else to build before you automate this</h2>
+      <p class="dek">The reference repos above are great starting points, but none of them are hardened for running unattended, every day, at scale.</p>
+      <div class="checklist">
+        <div class="checklist-item"><strong>State / idempotency DB</strong><span>Every topic, script hash, generated asset, and publish status in one table — so you never repeat a topic (this also reduces inauthentic-content risk) and can safely retry a failed step.</span></div>
+        <div class="checklist-item"><strong>Retry + backoff</strong><span>On every external call — video-gen APIs queue and fail; a silent failure just burns budget.</span></div>
+        <div class="checklist-item"><strong>Cost tracking</strong><span>Per-video and per-day, with a budget alert, across all four providers' bills.</span></div>
+        <div class="checklist-item"><strong>Real secrets management</strong><span>Get API keys out of a repo <code>.env</code> file and into a vault before this runs on a schedule unattended.</span></div>
+        <div class="checklist-item"><strong>Structured logging</strong><span>Queryable logs per pipeline run, so a failed or flagged video is debuggable after the fact.</span></div>
+        <div class="checklist-item"><strong>Human-in-the-loop gate</strong><span>Before publish — at minimum in the first few weeks, and for anything borderline. Your strongest lever against the inauthentic-content policy.</span></div>
+        <div class="checklist-item"><strong>Pre-publish policy check</strong><span>A cheap LLM pass or checklist against platform policy before you spend render budget or go live.</span></div>
+        <div class="checklist-item"><strong>Captioning step</strong><span>Whisper (or similar) for word-level timestamps feeding burned-in captions — helps retention and your disclosure story together.</span></div>
+        <div class="checklist-item"><strong>Asset storage plan</strong><span>Video files add up fast — decide on a bucket and a retention/expiry policy now.</span></div>
+        <div class="checklist-item"><strong>Plan around upload quotas</strong><span>The YouTube/TikTok numbers above, built into your schedule before you assume "just post more."</span></div>
+        <div class="checklist-item"><strong>Start on 5–10 videos</strong><span>Validate the economics and policy compliance before wiring up daily or multi-channel auto-publish.</span></div>
+      </div>
+    </div>
+
+  </section>
+  </main>
+
+  <footer>
+    <p>Built September 10, 2026. Pricing, payout rates, and platform policies move fast — verify current numbers against provider pricing pages and each platform's help center before committing budget or scaling. Sources include Runway, Google, Kling, MiniMax, OpenAI, HeyGen, Perplexity, YouTube, and TikTok's own documentation, plus current creator-economy reporting.</p>
+  </footer>
+
+</div>
+
+<script>
+  (function(){
+    var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+    var panels = {
+      'tab-general': document.getElementById('panel-general'),
+      'tab-developer': document.getElementById('panel-developer')
+    };
+    function activate(tab){
+      tabs.forEach(function(t){
+        var active = t === tab;
+        t.classList.toggle('active', active);
+        t.setAttribute('aria-selected', active ? 'true' : 'false');
+        var panel = panels[t.id];
+        if(panel){ panel.hidden = !active; }
+      });
+    }
+    tabs.forEach(function(tab, i){
+      tab.addEventListener('click', function(){ activate(tab); });
+      tab.addEventListener('keydown', function(e){
+        if(e.key === 'ArrowRight' || e.key === 'ArrowLeft'){
+          e.preventDefault();
+          var next = e.key === 'ArrowRight' ? (i+1) % tabs.length : (i-1+tabs.length) % tabs.length;
+          tabs[next].focus();
+          activate(tabs[next]);
+        }
+      });
+    });
+  })();
+</script>
+</body>
+</html>
